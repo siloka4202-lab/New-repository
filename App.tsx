@@ -3,6 +3,7 @@ import { ProjectData, GenerationStatus } from './types';
 import { BookOpen, Download, Loader2, Sparkles, FileText, CheckCircle, GraduationCap, School } from 'lucide-react';
 
 export default function App() {
+  const pollInterval = useRef<NodeJS.Timeout | null>(null);
   const [status, setStatus] = useState<GenerationStatus>(GenerationStatus.IDLE);
   const [progress, setProgress] = useState<number>(0);
   const [statusMessage, setStatusMessage] = useState<string>('');
