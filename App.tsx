@@ -6,11 +6,11 @@ export default function App() {
   const [status, setStatus] = useState<GenerationStatus>(GenerationStatus.IDLE);
   const [progress, setProgress] = useState<number>(0);
   const [statusMessage, setStatusMessage] = useState<string>('');
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+
   
   // Use a ref to track the polling interval so we can clear it easily
-  const pollInterval = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<ProjectData>({
     topic: '',
@@ -86,20 +86,10 @@ export default function App() {
     }, 1000);
   };
 
-  const downloadResult = async (jobId: string) => {
-     try {
-        const res = await fetch(`/api/download/${jobId}`);
-        if (!res.ok) throw new Error('Download failed');
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        setPdfBlobUrl(url);
-        setStatus(GenerationStatus.COMPLETE);
-     } catch (err) {
-        console.error(err);
-        setErrorMsg('Ошибка при скачивании файла');
-        setStatus(GenerationStatus.ERROR);
-     }
-  };
+  const downloadResult = (jobId: string) => {
+  window.location.href = `/api/download/${jobId}`;
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,17 +117,25 @@ export default function App() {
   throw new Error(errText);
 }
 
-let jobId;
+let jobId: string;
+
 try {
   const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Ошибка запуска генерации");
+  }
+
   jobId = data.jobId;
+  setCurrentJobId(jobId);
+
 } catch {
   throw new Error("Неверный ответ от сервера");
 }
 
+// 2. Start Polling
+startPolling(jobId);
 
-      // 2. Start Polling
-      startPolling(jobId);
 
     } catch (err: any) {
       console.error(err);
@@ -149,7 +147,6 @@ try {
   const resetForm = () => {
     if (pollInterval.current) clearInterval(pollInterval.current);
     setStatus(GenerationStatus.IDLE);
-    setPdfBlobUrl(null);
     setProgress(0);
   };
 
@@ -476,14 +473,12 @@ try {
                  >
                    Создать еще
                  </button>
-                 <a 
-                   href={pdfBlobUrl} 
-                   download={`${formData.topic.replace(/\s+/g, '_')}_Проект.pdf`}
-                   className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2"
-                 >
-                   <Download className="w-5 h-5" />
-                   Скачать PDF
-                 </a>
+                 <button
+  onClick={() => downloadResult(currentJobId)}
+  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl"
+>
+  Скачать PDF
+</button>
                </div>
             </div>
           </div>
