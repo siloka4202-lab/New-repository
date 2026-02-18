@@ -78,6 +78,8 @@ app.post('/api/generate', (req, res) => {
 
     // Start background process
     generateProjectBackground(jobId, req.body);
+    
+
 
     res.json({ jobId });
   } catch (err: any) {
@@ -160,8 +162,19 @@ if (data.difficulty <= 2) {
 `;
 }
 
-const wordsMin = data.pages * 1800;
-const wordsMax = data.pages * 2200;
+console.log("===== DEBUG PAGES =====");
+console.log("Raw pages value:", data.pages);
+console.log("Type of pages:", typeof data.pages);
+
+const pages = Number(data.pages);
+console.log("Converted pages:", pages);
+
+const wordsMin = pages * 1800;
+const wordsMax = pages * 2200;
+
+console.log("Words range:", wordsMin, "-", wordsMax);
+console.log("=======================");
+
 
 const prompt = `
 Напиши исследовательскую работу по теме "${data.topic}".
