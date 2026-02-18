@@ -212,21 +212,28 @@ const prompt = `
     updateJob(jobId, { progress: 10, message: 'Консультация с ИИ (написание текста)...' });
 
     // 2. Call OpenRouter API
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+if (!OPENROUTER_API_KEY) {
+  throw new Error("OPENROUTER_API_KEY is not defined");
+}
+
 const response = await axios.post(
   "https://openrouter.ai/api/v1/chat/completions",
   {
-    model: "mistralai/mistral-7b-instruct",
+    model: "openai/gpt-4o-mini",
     messages: [
       { role: "user", content: prompt }
     ]
   },
   {
     headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
       "Content-Type": "application/json"
     }
   }
 );
+
 
 const markdownContent = response.data.choices[0].message.content;
 
