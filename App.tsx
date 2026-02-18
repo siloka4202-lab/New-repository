@@ -9,6 +9,7 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   
   // Use a ref to track the polling interval so we can clear it easily
@@ -56,35 +57,39 @@ export default function App() {
     if (pollInterval.current) clearInterval(pollInterval.current);
     
     pollInterval.current = setInterval(async () => {
-      try {
+    try {
         const response = await fetch(`/api/status/${jobId}`);
-        if (!response.ok) return; // Retry next tick
-        
-        let data;
-        try {
-          data = await response.json();
-        }catch {
-          return; // если пустой ответ — просто ждём следующий polling
-          }
-        
+        if (!response.ok) return;
+
+        const data = await response.json();
+
         if (data.status === 'processing') {
-          setProgress(data.progress);
-          setStatusMessage(data.message);
+            setProgress(data.progress);
+            setStatusMessage(data.message);
+
         } else if (data.status === 'completed') {
-          if (pollInterval.current) clearInterval(pollInterval.current);
-          setProgress(100);
-          setStatusMessage('Загрузка файла...');
-          downloadResult(jobId);
+
+            if (pollInterval.current)
+                clearInterval(pollInterval.current);
+
+            setProgress(100);
+            setStatusMessage('Файл готов!');
+            setPdfBlobUrl(`/api/download/${jobId}`);
+            setStatus(GenerationStatus.COMPLETE);
+
         } else if (data.status === 'error') {
-          if (pollInterval.current) clearInterval(pollInterval.current);
-          setErrorMsg(data.error || 'Ошибка генерации');
-          setStatus(GenerationStatus.ERROR);
+
+            if (pollInterval.current)
+                clearInterval(pollInterval.current);
+
+            setErrorMsg(data.error || 'Ошибка генерации');
+            setStatus(GenerationStatus.ERROR);
         }
-      } catch (err) {
+
+    } catch (err) {
         console.error("Polling error", err);
-        // Continue polling in case of transient network error
-      }
-    }, 1000);
+    }
+}, 1000);
   };
 
   const downloadResult = (jobId: string) => {
@@ -475,7 +480,7 @@ startPolling(jobId);
                    Создать еще
                  </button>
                  <button
-  onClick={() => downloadResult(currentJobId)}
+  onClick={() => currentJobId && downloadResult(currentJobId)}
   className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl"
 >
   Скачать PDF
